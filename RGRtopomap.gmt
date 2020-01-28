@@ -1,0 +1,93 @@
+#!/bin/sh
+#
+# SccsID %M% Version %I% %G% 1996
+#
+# GMT Script for color image of the western U.S. raw elevation data.
+#
+# version 16 August 2004
+#
+PS_OUT="RGR_drainage.ps"
+RANGE="-R-108.5/-104.2/31/38.5"
+PROJ="-JM4"
+ANOT="-B2dSWne"
+gmtset PAPER_MEDIA Custom_475x750 COLOR_BACKGROUND 139/218/170 COLOR_NAN 215/215/255
+rm $PS_OUT
+#
+
+FLAGS="-F -I30c"
+xyz2grd RGR_drain.llz -Gtopo.grd ${RANGE} ${FLAGS}
+#
+FLAGS="-A90 -Ne0.6"
+grdgradient topo.grd -Grrlf.grd ${FLAGS}
+#
+#FLAGS="-Cgray -S1350/3300/20"
+#grd2cpt topo.grd ${FLAGS} > gray.cpt
+
+FLAGS="-P  -K"
+psbasemap ${RANGE} ${PROJ} "${ANOT}" ${FLAGS} > $PS_OUT
+#
+FLAGS="-Ctopo.cpt -Irrlf.grd -O -K"
+grdimage topo.grd ${RANGE} ${PROJ} ${FLAGS} >> $PS_OUT
+#
+FLAGS="-Dh -N1/5 -N2/4 -N3/2 -I1/2p/blue -I5/1p/blue -W3 -V -O -K"
+pscoast ${RANGE} ${PROJ} ${FLAGS} >> $PS_OUT
+#
+
+#insert drainages
+#FLAGS="-O -K -m -W1pblack"
+#psxy rg_05.gmt  ${RANGE} ${PROJ} ${FLAGS}  >> $PS_OUT
+
+#FLAGS="-O -K -m -W1p/black"
+#psxy rg_06.gmt  ${RANGE} ${PROJ} ${FLAGS}  >> $PS_OUT
+
+#FLAGS="-O -K -m -W1.5p/black"
+#psxy rg_07.gmt  ${RANGE} ${PROJ} ${FLAGS}  >> $PS_OUT
+
+#FLAGS="-O -K -m -W2p/black"
+#psxy rg_08.gmt  ${RANGE} ${PROJ} ${FLAGS}  >> $PS_OUT
+
+#insert faults
+FLAGS="-O -K -m -W0.8p/black"
+psxy rgr_drainfaults.gmt  ${RANGE} ${PROJ} ${FLAGS}  >> $PS_OUT
+
+#labels
+FLAGS="-O -K -Sc0.2 -Gblack"
+psxy ${RANGE} ${PROJ} ${FLAGS} << END  >> $PS_OUT
+-106.6 35.11 #ABQ
+-106.89 34.06 #Socorro
+-105.97 35.66 #Santa Fe
+-105.87	37.469 #Alamosa
+END
+
+FLAGS="-O -K -Gblack"
+pstext ${RANGE} ${PROJ} ${FLAGS} << EOF  >> $PS_OUT
+-106.8 35.05 14 0 2 LT Albuquerque
+-107.05 34.00 14 0 2 LT Socorro
+-106.2 35.85 14 0 2 LT Santa Fe
+-106.05 37.63 14 0 2 LT Alamosa
+EOF
+
+FLAGS="-O -K -Gblack"
+pstext ${RANGE} ${PROJ} ${FLAGS} << EOF  >> $PS_OUT
+-107.8 37.14 12 0 2 LT Colorado
+-107.9 36.97 12 0 2 LT New Mexico
+-105.9 32.15 12 0 2 LT New Mexico
+-105.7 31.95 12 0 2 LT Texas
+-107.95 31.75 14 0 1 LT Mexico
+-107.8 31.95 14 0 1 LT U.S.
+EOF
+
+FLAGS="-Ctopo.cpt -D2.5/0.5/6/0.25h -Y-1.12 -O -K"
+psscale ${FLAGS} -B250:"Elevation[m]":>> $PS_OUT
+
+#
+FLAGS="-O"
+psxy ${RANGE} ${PROJ} ${FLAGS} < /dev/null >> $PS_OUT
+
+
+convert $PS_OUT -trim -flatten -density 500 RGR_drain.png
+
+#rm topo.grd rlf.grd gry.cpt
+#
+# Done
+open $PS_OUT
